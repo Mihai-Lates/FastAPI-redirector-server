@@ -2,10 +2,12 @@ import logging
 import os
 import signal
 
+import requests
 import uvicorn
 
 from fastapi import FastAPI, HTTPException, status
 from fastapi.responses import RedirectResponse, JSONResponse
+from requests import RequestException
 
 from constants import URL_A, URL_B, passcode
 
@@ -28,6 +30,24 @@ async def form():
     global visit_count_A
     global visit_count_B
 
+    if is_form_closed(url=URL_A) and is_form_closed(url=URL_B):
+        return {"message": "Ne pare rau, dar chestionarul nu mai accepta raspunsuri."}
+
+    # If one form is closed, redirect to the other one
+    if is_form_closed(url=URL_A):
+        try:
+            return RedirectResponse(url=URL_B)
+        except HTTPException as e:
+            server_logger.error(f"An error occurred: {e}")
+            raise HTTPException(status_code=500, detail=f"An error occurred: {e}")
+
+    if is_form_closed(url=URL_B):
+        try:
+            return RedirectResponse(url=URL_A)
+        except HTTPException as e:
+            server_logger.error(f"An error occurred: {e}")
+            raise HTTPException(status_code=500, detail=f"An error occurred: {e}")
+
     # Alternating logic for redirection
     if visit_count % 2 == 0:
         try:
@@ -36,6 +56,8 @@ async def form():
             return RedirectResponse(url=URL_A)
         except HTTPException as e:
             server_logger.error(f"An error occurred: {e}")
+            raise HTTPException(status_code=500, detail=f"An error occurred: {e}")
+
     else:
         try:
             visit_count += 1
@@ -43,6 +65,7 @@ async def form():
             return RedirectResponse(url=URL_B)
         except HTTPException as e:
             server_logger.error(f"An error occurred: {e}")
+            raise HTTPException(status_code=500, detail=f"An error occurred: {e}")
 
 
 @app.get("/users-{password}")
@@ -78,3 +101,15 @@ async def server_stop(password):
 def server_run():
     server_logger.info("Server starting...")
     uvicorn.run(app=app, host="127.0.0.1", port=8000)
+
+
+def is_form_closed(url: str):
+    try:
+        response = requests.get(url=url)
+    except RequestException as e:
+        server_logger.error(f"An error occurred: {e}")
+        raise RequestException(f"An error occurred: {e}")
+
+    if "/closedform" in response.url:
+        return True
+    return False

@@ -7,5 +7,5 @@ class TestServer:
 
 
 if __name__ == "__main__":
-    response = requests.get("http://127.0.0.1:8000/form")
+    response = requests.get("http://0.0.0.0:8080/")
     print(response)

@@ -2,7 +2,7 @@
 URL_A = "https://forms.gle/EA9xcazvNvULqyaw8"
 URL_B = "https://forms.gle/vmTiyoeEFFfdvtmv8"
 
-PASSCODE = "21240906"
+PASSCODE = ""
 
 GOOGLE_HOST = "0.0.0.0"
 GOOGLE_DEFAULT_PORT = 8080
